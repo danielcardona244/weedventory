@@ -1,0 +1,47 @@
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log files
+*.log
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (if using Firebase)
+google-services.json
+
+# Signing configs
+signing.gradle
+
+# User-specific configurations
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build outputs
+output/
+*.apk
+*.aab
+
+# Test outputs
+.coverage/
+coverage/
+
+# IDE
+.vscode
+.vs
+
+# OS
+.DS_Store
+Thumbs.db
