@@ -26,6 +26,7 @@ class ProductoViewModel(
         descripcion: String,
         costo: Double,
         precioVenta: Double,
+        stockActual: Int = 0,
         stockMinimo: Int = 0
     ) {
         viewModelScope.launch {
@@ -35,13 +36,30 @@ class ProductoViewModel(
                 costo = costo,
                 precioVenta = precioVenta,
                 stockMinimo = stockMinimo
-            )
+            ).also { productoId ->
+                if (stockActual > 0 && productoId > 0) {
+                    productoRepository.actualizarStock(productoId, stockActual)
+                }
+            }
         }
     }
-    
-    fun desactivarProducto(id: Long) {
+
+    fun actualizarProducto(producto: Producto) {
+        viewModelScope.launch {
+            productoRepository.actualizarProducto(producto)
+        }
+    }
+
+    fun eliminarProducto(id: Long) {
         viewModelScope.launch {
             productoRepository.desactivarProducto(id)
+        }
+    }
+
+    fun agregarUnidad(productoId: Long) {
+        viewModelScope.launch {
+            val producto = productoRepository.getById(productoId) ?: return@launch
+            productoRepository.actualizarStock(productoId, producto.stockActual + 1)
         }
     }
 }

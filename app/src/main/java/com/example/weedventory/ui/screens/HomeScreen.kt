@@ -1,120 +1,119 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.weedventory.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.weedventory.ui.navigation.NavDestinations
+import com.example.weedventory.R
+import com.example.weedventory.ui.viewmodel.ConsignacionViewModel
+import com.example.weedventory.ui.viewmodel.ProductoViewModel
+import com.example.weedventory.ui.viewmodel.VentaViewModel
 
-@Composable
-fun HomeScreen(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Weedventory") }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Gestión de Inventario",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            MenuButton(
-                title = "Productos",
-                description = "Crear y gestionar productos",
-                onClick = { navController.navigate(NavDestinations.PRODUCTOS) }
-            )
-            
-            MenuButton(
-                title = "Inventario",
-                description = "Registrar entradas y ajustes de stock",
-                onClick = { navController.navigate(NavDestinations.INVENTARIO) }
-            )
-            
-            MenuButton(
-                title = "Ventas",
-                description = "Registrar ventas normales y consumo propio",
-                onClick = { navController.navigate(NavDestinations.VENTAS) }
-            )
-            
-            MenuButton(
-                title = "Consignaciones",
-                description = "Registrar nuevas consignaciones",
-                onClick = { navController.navigate(NavDestinations.CONSIGNACIONES) }
-            )
-            
-            MenuButton(
-                title = "Pendientes",
-                description = "Ver consignaciones pendientes por revisar",
-                onClick = { navController.navigate(NavDestinations.PENDIENTES) }
-            )
-            
-            MenuButton(
-                title = "Historial",
-                description = "Ver historial de ventas, consignaciones e inventario",
-                onClick = { navController.navigate(NavDestinations.HISTORIAL) }
-            )
-        }
-    }
+sealed class HomeTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    object Inventario : HomeTab("Inventario", Icons.Default.List)
+    object Venta : HomeTab("Venta", Icons.Default.ShoppingCart)
+    object Historial : HomeTab("Historial", Icons.Default.History)
 }
 
 @Composable
-fun MenuButton(
-    title: String,
-    description: String,
-    onClick: () -> Unit
+fun HomeScreen(
+    navController: NavHostController,
+    productoViewModel: ProductoViewModel,
+    ventaViewModel: VentaViewModel,
+    consignacionViewModel: ConsignacionViewModel
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Button(
-            onClick = onClick,
+    var selectedTab by remember { mutableStateOf<HomeTab>(HomeTab.Inventario) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_wdty),
+                            contentDescription = "Logo Weedventory",
+                            modifier = Modifier.size(40.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Weedventory",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Inventario, ventas y consignaciones",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                listOf(HomeTab.Inventario, HomeTab.Venta, HomeTab.Historial).forEach { tab ->
+                    NavigationBarItem(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        icon = { androidx.compose.material3.Icon(tab.icon, contentDescription = tab.title) },
+                        label = { Text(tab.title) }
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            when (selectedTab) {
+                is HomeTab.Inventario -> InventarioScreen(
+                    productoViewModel = productoViewModel
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall
+                is HomeTab.Venta -> VentaScreen(
+                    viewModel = ventaViewModel,
+                    consignacionViewModel = consignacionViewModel,
+                    productoViewModel = productoViewModel
+                )
+                is HomeTab.Historial -> HistorialScreen(
+                    ventaViewModel = ventaViewModel,
+                    consignacionViewModel = consignacionViewModel
                 )
             }
         }

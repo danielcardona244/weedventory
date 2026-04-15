@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.weedventory.ui.screens
 
 import android.app.DatePickerDialog

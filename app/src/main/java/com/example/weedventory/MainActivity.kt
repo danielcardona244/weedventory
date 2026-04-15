@@ -25,7 +25,6 @@ import com.example.weedventory.data.repository.VentaRepository
 import com.example.weedventory.ui.navigation.WeedventoryNavGraph
 import com.example.weedventory.ui.theme.WeedventoryTheme
 import com.example.weedventory.ui.viewmodel.ConsignacionViewModel
-import com.example.weedventory.ui.viewmodel.InventarioViewModel
 import com.example.weedventory.ui.viewmodel.ProductoViewModel
 import com.example.weedventory.ui.viewmodel.VentaViewModel
 import com.example.weedventory.utils.Constants
@@ -35,7 +34,6 @@ import java.util.concurrent.TimeUnit
 class MainActivity : ComponentActivity() {
     
     private lateinit var productoViewModel: ProductoViewModel
-    private lateinit var inventarioViewModel: InventarioViewModel
     private lateinit var ventaViewModel: VentaViewModel
     private lateinit var consignacionViewModel: ConsignacionViewModel
     
@@ -67,7 +65,6 @@ class MainActivity : ComponentActivity() {
         
         // Crear ViewModels
         productoViewModel = ProductoViewModel(productoRepository)
-        inventarioViewModel = InventarioViewModel(inventarioRepository)
         ventaViewModel = VentaViewModel(ventaRepository)
         consignacionViewModel = ConsignacionViewModel(consignacionRepository)
         
@@ -96,7 +93,6 @@ class MainActivity : ComponentActivity() {
                     WeedventoryNavGraph(
                         navController = navController,
                         productoViewModel = productoViewModel,
-                        inventarioViewModel = inventarioViewModel,
                         ventaViewModel = ventaViewModel,
                         consignacionViewModel = consignacionViewModel
                     )
