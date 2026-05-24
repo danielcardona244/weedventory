@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.weedventory.data.local.db.dao.ConsignacionDao
 import com.example.weedventory.data.local.db.dao.MovimientoInventarioDao
 import com.example.weedventory.data.local.db.dao.ProductoDao
@@ -87,7 +89,7 @@ class Converters {
         Consignacion::class,
         ConsignacionDetalle::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -101,6 +103,14 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE productos ADD COLUMN unidad TEXT NOT NULL DEFAULT 'KILO'")
+                db.execSQL("ALTER TABLE detalles_venta ADD COLUMN unidad TEXT NOT NULL DEFAULT 'KILO'")
+                db.execSQL("ALTER TABLE consignacion_detalles ADD COLUMN unidad TEXT NOT NULL DEFAULT 'KILO'")
+            }
+        }
         
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -108,7 +118,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "weedventory_database"
-                ).build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }

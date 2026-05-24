@@ -1,6 +1,7 @@
 package com.example.weedventory.data.local.db.entity
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 import java.time.Instant
 
@@ -50,6 +51,8 @@ data class DetalleVenta(
     val ventaId: Long,
     val productoId: Long,
     val cantidad: Int,
+    @ColumnInfo(defaultValue = "'KILO'")
+    val unidad: String = "KILO",
     val precioUnitario: Double,
-    val subtotal: Double = cantidad * precioUnitario
+    val subtotal: Double
 )

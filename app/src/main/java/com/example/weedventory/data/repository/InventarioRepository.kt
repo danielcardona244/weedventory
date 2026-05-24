@@ -105,9 +105,9 @@ class InventarioRepository(
             
             val diferencia = cantidadActual - producto.stockActual
             val tipo = if (diferencia >= 0) TipoMovimiento.ENTRADA else TipoMovimiento.AJUSTE
-            
+
             productoDao.actualizarStock(productoId, cantidadActual)
-            
+
             val movimiento = MovimientoInventario(
                 productoId = productoId,
                 tipoMovimiento = tipo,

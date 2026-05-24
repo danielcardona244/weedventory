@@ -17,20 +17,46 @@ class ProductoRepository(private val productoDao: ProductoDao) {
     
     suspend fun getById(id: Long): Producto? = productoDao.getById(id)
     
+    suspend fun getByNombre(nombre: String): Producto? = productoDao.getByNombre(nombre)
+
+    suspend fun consolidarProductosDuplicadosActivos() {
+        productoDao.getNombresActivosDuplicados().forEach { nombre ->
+            productoDao.fusionarActivosConMismoNombre(nombre)
+        }
+    }
+
     suspend fun crearProducto(
         nombre: String,
         descripcion: String,
         costo: Double,
         precioVenta: Double,
-        stockMinimo: Int = 0
+        stockActual: Int = 0,
+        stockMinimo: Int = 0,
+        unidad: String = "KILO"
     ): Long {
+        val nombreTrimmed = nombre.trim()
+        val productoExistente = productoDao.fusionarActivosConMismoNombre(nombreTrimmed)
+        if (productoExistente != null) {
+            val productoActualizado = productoExistente.copy(
+                descripcion = if (descripcion.isBlank()) productoExistente.descripcion else descripcion,
+                costo = if (costo > 0.0) costo else productoExistente.costo,
+                precioVenta = if (precioVenta > 0.0) precioVenta else productoExistente.precioVenta,
+                stockActual = productoExistente.stockActual + stockActual,
+                stockMinimo = maxOf(productoExistente.stockMinimo, stockMinimo),
+                unidad = unidad
+            )
+            productoDao.update(productoActualizado)
+            return productoExistente.id
+        }
+
         val producto = Producto(
-            nombre = nombre,
+            nombre = nombreTrimmed,
             descripcion = descripcion,
             costo = costo,
             precioVenta = precioVenta,
+            stockActual = stockActual,
             stockMinimo = stockMinimo,
-            stockActual = 0
+            unidad = unidad
         )
         return productoDao.insert(producto)
     }

@@ -8,10 +8,12 @@ import com.example.weedventory.data.local.db.entity.TipoMovimiento
 import com.example.weedventory.data.local.db.entity.TipoVenta
 import com.example.weedventory.data.local.db.entity.Venta
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.roundToInt
 
 data class ItemVenta(
     val productoId: Long,
-    val cantidad: Int,
+    val cantidad: Double,
+    val unidad: String = "KILO",
     val precioUnitario: Double
 )
 
@@ -51,9 +53,10 @@ class VentaRepository(
                 val producto = productoDao.getById(item.productoId)
                     ?: return Result.failure(Exception("Producto ${item.productoId} no encontrado"))
                 
-                if (producto.stockActual < item.cantidad) {
+                val cantidadStock = item.cantidad.toStockQuantity()
+                if (producto.stockActual < cantidadStock) {
                     return Result.failure(
-                        Exception("Stock insuficiente para ${producto.nombre}")
+                        Exception("Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockActual}, solicitado: $cantidadStock")
                     )
                 }
                 total += item.cantidad * item.precioUnitario
@@ -70,19 +73,22 @@ class VentaRepository(
             
             // Insertar detalles y actualizar inventario
             for (item in items) {
+                val cantidadStock = item.cantidad.toStockQuantity()
                 ventaDao.insertDetalleVenta(
                     DetalleVenta(
                         ventaId = ventaId,
                         productoId = item.productoId,
-                        cantidad = item.cantidad,
-                        precioUnitario = item.precioUnitario
+                        cantidad = cantidadStock,
+                        unidad = item.unidad,
+                        precioUnitario = item.precioUnitario,
+                        subtotal = item.cantidad * item.precioUnitario
                     )
                 )
-                
+
                 // Registrar movimiento de inventario
                 inventarioRepository.registrarSalida(
                     productoId = item.productoId,
-                    cantidad = item.cantidad,
+                    cantidad = cantidadStock,
                     tipoMovimiento = TipoMovimiento.VENTA,
                     referenciaId = ventaId
                 )
@@ -108,9 +114,10 @@ class VentaRepository(
                 val producto = productoDao.getById(item.productoId)
                     ?: return Result.failure(Exception("Producto ${item.productoId} no encontrado"))
                 
-                if (producto.stockActual < item.cantidad) {
+                val cantidadStock = item.cantidad.toStockQuantity()
+                if (producto.stockActual < cantidadStock) {
                     return Result.failure(
-                        Exception("Stock insuficiente para ${producto.nombre}")
+                        Exception("Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockActual}, solicitado: $cantidadStock")
                     )
                 }
                 total += item.cantidad * item.precioUnitario
@@ -127,19 +134,22 @@ class VentaRepository(
             
             // Insertar detalles y actualizar inventario
             for (item in items) {
+                val cantidadStock = item.cantidad.toStockQuantity()
                 ventaDao.insertDetalleVenta(
                     DetalleVenta(
                         ventaId = ventaId,
                         productoId = item.productoId,
-                        cantidad = item.cantidad,
-                        precioUnitario = item.precioUnitario
+                        cantidad = cantidadStock,
+                        unidad = item.unidad,
+                        precioUnitario = item.precioUnitario,
+                        subtotal = item.cantidad * item.precioUnitario
                     )
                 )
-                
+
                 // Registrar movimiento de inventario
                 inventarioRepository.registrarSalida(
                     productoId = item.productoId,
-                    cantidad = item.cantidad,
+                    cantidad = cantidadStock,
                     tipoMovimiento = TipoMovimiento.CONSUMO,
                     referenciaId = ventaId
                 )
@@ -153,5 +163,32 @@ class VentaRepository(
     
     suspend fun getDetallesVenta(ventaId: Long): List<DetalleVenta> {
         return ventaDao.getDetallesVenta(ventaId)
+    }
+    
+    suspend fun eliminarVenta(id: Long): Result<Unit> {
+        return try {
+            val venta = ventaDao.getVentaById(id) ?: return Result.failure(Exception("Venta no encontrada"))
+            val detalles = ventaDao.getDetallesVenta(id)
+            
+            // Revertir inventario
+            for (detalle in detalles) {
+                inventarioRepository.registrarEntrada(
+                    productoId = detalle.productoId,
+                    cantidad = detalle.cantidad,
+                    nota = "Reversión de venta eliminada"
+                )
+            }
+            
+            ventaDao.deleteVenta(venta)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun Double.toStockQuantity(): Int {
+        val quantity = roundToInt()
+        require(quantity > 0) { "Cantidad debe ser mayor a 0" }
+        return quantity
     }
 }

@@ -8,10 +8,12 @@ import com.example.weedventory.data.local.db.entity.EstadoConsignacion
 import com.example.weedventory.data.local.db.entity.TipoMovimiento
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import kotlin.math.roundToInt
 
 data class ItemConsignacion(
     val productoId: Long,
-    val cantidad: Int,
+    val cantidad: Double,
+    val unidad: String = "KILO",
     val precioUnitario: Double
 )
 
@@ -61,10 +63,11 @@ class ConsignacionRepository(
             for (item in items) {
                 val producto = productoDao.getById(item.productoId)
                     ?: return Result.failure(Exception("Producto ${item.productoId} no encontrado"))
-                
-                if (producto.stockActual < item.cantidad) {
+
+                val cantidadStock = item.cantidad.toStockQuantity()
+                if (producto.stockActual < cantidadStock) {
                     return Result.failure(
-                        Exception("Stock insuficiente para ${producto.nombre}")
+                        Exception("Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockActual}, solicitado: $cantidadStock")
                     )
                 }
                 montoTotal += item.cantidad * item.precioUnitario
@@ -84,19 +87,22 @@ class ConsignacionRepository(
             
             // Insertar detalles y descontar del inventario
             for (item in items) {
+                val cantidadStock = item.cantidad.toStockQuantity()
                 consignacionDao.insertDetalle(
                     ConsignacionDetalle(
                         consignacionId = consignacionId,
                         productoId = item.productoId,
-                        cantidad = item.cantidad,
-                        precioUnitario = item.precioUnitario
+                        cantidad = cantidadStock,
+                        unidad = item.unidad,
+                        precioUnitario = item.precioUnitario,
+                        subtotal = item.cantidad * item.precioUnitario
                     )
                 )
-                
+
                 // Descontar del inventario
                 inventarioRepository.registrarSalida(
                     productoId = item.productoId,
-                    cantidad = item.cantidad,
+                    cantidad = cantidadStock,
                     tipoMovimiento = TipoMovimiento.CONSIGNACION,
                     nota = "Consignación a: $comprador",
                     referenciaId = consignacionId
@@ -169,5 +175,32 @@ class ConsignacionRepository(
     
     suspend fun getDetalles(consignacionId: Long): List<ConsignacionDetalle> {
         return consignacionDao.getDetalles(consignacionId)
+    }
+    
+    suspend fun eliminarConsignacion(id: Long): Result<Unit> {
+        return try {
+            val consignacion = consignacionDao.getById(id) ?: return Result.failure(Exception("Consignación no encontrada"))
+            val detalles = consignacionDao.getDetalles(id)
+            
+            // Revertir inventario
+            for (detalle in detalles) {
+                inventarioRepository.registrarEntrada(
+                    productoId = detalle.productoId,
+                    cantidad = detalle.cantidad,
+                    nota = "Reversión de consignación eliminada"
+                )
+            }
+            
+            consignacionDao.delete(consignacion)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun Double.toStockQuantity(): Int {
+        val quantity = roundToInt()
+        require(quantity > 0) { "Cantidad debe ser mayor a 0" }
+        return quantity
     }
 }

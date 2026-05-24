@@ -81,4 +81,16 @@ class VentaViewModel(
         _mensajeExito.value = null
         _ventaId.value = null
     }
+    
+    fun eliminarVenta(id: Long) {
+        viewModelScope.launch {
+            val resultado = ventaRepository.eliminarVenta(id)
+            resultado.onSuccess {
+                _mensajeExito.value = "Venta eliminada correctamente"
+            }
+            resultado.onFailure { error ->
+                _mensajeError.value = error.message ?: "Error al eliminar venta"
+            }
+        }
+    }
 }

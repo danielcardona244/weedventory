@@ -44,7 +44,7 @@ import com.example.weedventory.ui.viewmodel.VentaViewModel
 
 sealed class HomeTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Inventario : HomeTab("Inventario", Icons.Default.List)
-    object Venta : HomeTab("Venta", Icons.Default.ShoppingCart)
+    object Ventas : HomeTab("Ventas", Icons.Default.ShoppingCart)
     object Historial : HomeTab("Historial", Icons.Default.History)
 }
 
@@ -69,6 +69,13 @@ fun HomeScreen(
                             contentScale = ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.width(12.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_text_wdty),
+                            contentDescription = "Texto Weedventory",
+                            modifier = Modifier.height(32.dp).width(120.dp), // adjust size as needed
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = "Weedventory",
@@ -86,7 +93,7 @@ fun HomeScreen(
         },
         bottomBar = {
             NavigationBar {
-                listOf(HomeTab.Inventario, HomeTab.Venta, HomeTab.Historial).forEach { tab ->
+                listOf(HomeTab.Inventario, HomeTab.Ventas, HomeTab.Historial).forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
@@ -106,10 +113,10 @@ fun HomeScreen(
                 is HomeTab.Inventario -> InventarioScreen(
                     productoViewModel = productoViewModel
                 )
-                is HomeTab.Venta -> VentaScreen(
+                is HomeTab.Ventas -> VentaScreen(
                     viewModel = ventaViewModel,
-                    consignacionViewModel = consignacionViewModel,
-                    productoViewModel = productoViewModel
+                    productoViewModel = productoViewModel,
+                    consignacionViewModel = consignacionViewModel
                 )
                 is HomeTab.Historial -> HistorialScreen(
                     ventaViewModel = ventaViewModel,

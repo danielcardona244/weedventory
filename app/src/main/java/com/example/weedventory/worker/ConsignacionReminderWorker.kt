@@ -6,7 +6,7 @@ import androidx.work.WorkerParameters
 import com.example.weedventory.data.local.db.AppDatabase
 import com.example.weedventory.data.local.db.entity.EstadoConsignacion
 import com.example.weedventory.notification.NotificationHelper
-import com.example.weedventory.utils.DateFormatter
+import kotlinx.coroutines.flow.first
 
 /**
  * Worker que revisa las consignaciones pendientes y muestra notificaciones
@@ -29,11 +29,7 @@ class ConsignacionReminderWorker(
             val consignacionesAhora = consignacionDao.getConsignacionesProximas(
                 ahora,
                 ahora + 86400000 // Próximas 24 horas
-            ).let { flow ->
-                val lista = mutableListOf<com.example.weedventory.data.local.db.entity.Consignacion>()
-                flow.collect { lista.addAll(it) }
-                lista
-            }
+            ).first()
             
             // Mostrar notificación por cada consignación a revisar
             consignacionesAhora.forEach { consignacion ->
@@ -47,12 +43,7 @@ class ConsignacionReminderWorker(
             }
             
             // Marcar consignaciones vencidas
-            val consignacionesVencidas = consignacionDao.getConsignacionesVencidas(ahora)
-                .let { flow ->
-                    val lista = mutableListOf<com.example.weedventory.data.local.db.entity.Consignacion>()
-                    flow.collect { lista.addAll(it) }
-                    lista
-                }
+            val consignacionesVencidas = consignacionDao.getConsignacionesVencidas(ahora).first()
             
             consignacionesVencidas.forEach { consignacion ->
                 consignacionDao.actualizarEstadoYSaldo(

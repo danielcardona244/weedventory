@@ -98,4 +98,16 @@ class ConsignacionViewModel(
         _mensajeExito.value = null
         _consignacionId.value = null
     }
+    
+    fun eliminarConsignacion(id: Long) {
+        viewModelScope.launch {
+            val resultado = consignacionRepository.eliminarConsignacion(id)
+            resultado.onSuccess {
+                _mensajeExito.value = "Consignación eliminada correctamente"
+            }
+            resultado.onFailure { error ->
+                _mensajeError.value = error.message ?: "Error al eliminar consignación"
+            }
+        }
+    }
 }

@@ -2,15 +2,9 @@
 
 package com.example.weedventory.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,8 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,11 +26,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +47,15 @@ fun InventarioScreen(
 ) {
     val productos by productoViewModel.todosProductos.collectAsState()
     val productosConStockBajo by productoViewModel.productosConStockBajo.collectAsState()
+    val mensajeExito by productoViewModel.mensajeExito.collectAsState()
+    val mensajeError by productoViewModel.mensajeError.collectAsState()
+    
+    LaunchedEffect(mensajeExito, mensajeError) {
+        if (mensajeExito != null || mensajeError != null) {
+            delay(3000)
+            productoViewModel.limpiarMensajes()
+        }
+    }
 
     var mostrarFormulario by remember { mutableStateOf(false) }
     var productoEditando by remember { mutableStateOf<Producto?>(null) }
@@ -56,7 +64,6 @@ fun InventarioScreen(
     var precioVenta by remember { mutableStateOf("") }
     var stockActual by remember { mutableStateOf("") }
     var stockMinimo by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -70,17 +77,6 @@ fun InventarioScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (mensaje != null) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    mensaje!!,
-                    modifier = Modifier.padding(12.dp),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         if (productosConStockBajo.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -92,9 +88,22 @@ fun InventarioScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
+        if (mensajeError != null) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(mensajeError!!, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        if (mensajeExito != null) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(mensajeExito!!, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         if (mostrarFormulario) {
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = if (productoEditando == null) "Agregar producto" else "Editar producto",
                         style = MaterialTheme.typography.titleMedium,
@@ -132,7 +141,7 @@ fun InventarioScreen(
                         onValueChange = { stockActual = it },
                         label = { Text("Stock actual") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
 
@@ -141,7 +150,7 @@ fun InventarioScreen(
                         onValueChange = { stockMinimo = it },
                         label = { Text("Stock mínimo") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
 
@@ -174,7 +183,8 @@ fun InventarioScreen(
                                             costo = costoDouble,
                                             precioVenta = precioDouble,
                                             stockActual = stockActualInt,
-                                            stockMinimo = stockMinimoInt
+                                            stockMinimo = stockMinimoInt,
+                                            unidad = "KILO"
                                         )
                                     } else {
                                         productoViewModel.actualizarProducto(
@@ -183,7 +193,8 @@ fun InventarioScreen(
                                                 costo = costoDouble,
                                                 precioVenta = precioDouble,
                                                 stockActual = stockActualInt,
-                                                stockMinimo = stockMinimoInt
+                                                stockMinimo = stockMinimoInt,
+                                                unidad = productoEditando!!.unidad
                                             )
                                         )
                                     }
@@ -194,7 +205,6 @@ fun InventarioScreen(
                                     precioVenta = ""
                                     stockActual = ""
                                     stockMinimo = ""
-                                    mensaje = "Producto guardado correctamente"
                                 }
                             },
                             modifier = Modifier.weight(1f)
@@ -252,8 +262,7 @@ fun InventarioScreen(
                                             Icon(Icons.Default.Edit, contentDescription = "Editar")
                                         }
                                         IconButton(onClick = {
-                                            productoViewModel.eliminarProducto(producto.id)
-                                            mensaje = "Producto eliminado"
+                                            productoViewModel.desactivarProducto(producto.id)
                                         }) {
                                             Icon(Icons.Default.Delete, contentDescription = "Eliminar")
                                         }
