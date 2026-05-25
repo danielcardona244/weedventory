@@ -15,8 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +55,13 @@ fun ProductoScreen(
     if (mostrarFormulario) {
         FormularioProducto(
             onGuardar = { nombre, descripcion, costo, precioVenta, stockMinimo ->
-                viewModel.crearProducto(nombre, descripcion, costo, precioVenta, stockMinimo)
+                viewModel.crearProducto(
+                    nombre = nombre,
+                    descripcion = descripcion,
+                    costo = costo,
+                    precioVenta = precioVenta,
+                    stockMinimo = stockMinimo
+                )
                 mostrarFormulario = false
             },
             onCancelar = { mostrarFormulario = false }
@@ -67,7 +73,7 @@ fun ProductoScreen(
                     title = { Text("Gestión de Productos") },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Filled.ArrowBack, "Atrás")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás")
                         }
                     }
                 )

@@ -21,7 +21,8 @@ fun WeedventoryNavGraph(
     navController: NavHostController,
     productoViewModel: ProductoViewModel,
     ventaViewModel: VentaViewModel,
-    consignacionViewModel: ConsignacionViewModel
+    consignacionViewModel: ConsignacionViewModel,
+    historialRequestId: Int = 0
 ) {
     NavHost(
         navController = navController,
@@ -32,7 +33,8 @@ fun WeedventoryNavGraph(
                 navController = navController,
                 productoViewModel = productoViewModel,
                 ventaViewModel = ventaViewModel,
-                consignacionViewModel = consignacionViewModel
+                consignacionViewModel = consignacionViewModel,
+                historialRequestId = historialRequestId
             )
         }
     }

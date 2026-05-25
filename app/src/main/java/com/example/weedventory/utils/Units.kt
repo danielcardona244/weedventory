@@ -1,5 +1,6 @@
 package com.example.weedventory.utils
 
+import java.util.Locale
 import kotlin.math.roundToInt
 
 enum class UnitType(val code: String) {
@@ -47,7 +48,7 @@ object UnitConverter {
         val value = fromGrams(grams, unit)
         val formatted = when (unit) {
             UnitType.GRAMO -> value.roundToInt().toString()
-            else -> String.format("%.2f", value)
+            else -> String.format(Locale.getDefault(), "%.2f", value)
         }
         return "$formatted ${unit.code}"
     }

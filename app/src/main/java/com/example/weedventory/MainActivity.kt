@@ -1,6 +1,7 @@
 package com.example.weedventory
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -32,10 +36,14 @@ import com.example.weedventory.worker.ConsignacionReminderWorker
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_OPEN_HISTORIAL = "open_historial"
+    }
     
     private lateinit var productoViewModel: ProductoViewModel
     private lateinit var ventaViewModel: VentaViewModel
     private lateinit var consignacionViewModel: ConsignacionViewModel
+    private var historialRequestId by mutableIntStateOf(0)
     
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -46,6 +54,10 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (intent.getBooleanExtra(EXTRA_OPEN_HISTORIAL, false)) {
+            historialRequestId++
+        }
         
         // Inicializar base de datos y repositorios
         val db = AppDatabase.getDatabase(this)
@@ -94,10 +106,19 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         productoViewModel = productoViewModel,
                         ventaViewModel = ventaViewModel,
-                        consignacionViewModel = consignacionViewModel
+                        consignacionViewModel = consignacionViewModel,
+                        historialRequestId = historialRequestId
                     )
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_HISTORIAL, false)) {
+            historialRequestId++
         }
     }
     
